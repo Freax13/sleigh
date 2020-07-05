@@ -1,9 +1,6 @@
 mod convert;
 mod debug;
-mod precedence;
 mod rename;
-
-pub use precedence::fix_precedence;
 
 use crate::{ComparisonOperator, LValue, NumTypePrefix};
 

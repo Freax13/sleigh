@@ -2,11 +2,14 @@ mod action;
 mod constraint;
 mod lvalue;
 mod parser;
+#[macro_use]
+mod precedence;
 mod rvalue;
 
 pub use action::*;
 pub use constraint::*;
 pub use lvalue::*;
+pub use precedence::{fix_precedence_constraint, fix_precedence_rvalue};
 pub use rvalue::*;
 
 use parser::SleighParser;

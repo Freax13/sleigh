@@ -366,6 +366,11 @@ impl SleighParser {
     }
 
     fn parse_constraint(token: Pair<Rule>) -> Constraint {
+        let constraint = Self::parse_raw_constraint(token);
+        fix_precedence_constraint(constraint)
+    }
+
+    fn parse_raw_constraint(token: Pair<Rule>) -> Constraint {
         let rule = token.as_rule();
         let mut tokens = token.into_inner();
 
@@ -403,6 +408,7 @@ impl SleighParser {
             }
             Rule::basic_constraint_comparison => {
                 let lhs = tokens.next().unwrap().as_str().to_string();
+                let lhs = ConstraintRValue::Field(lhs);
 
                 let mut token = tokens.next().unwrap();
                 let mut num_type = NumTypePrefix::Default;
@@ -577,7 +583,7 @@ impl SleighParser {
 
     fn parse_rvalue(token: Pair<Rule>) -> RValue {
         let raw = Self::parse_raw_rvalue(token);
-        fix_precedence(raw)
+        fix_precedence_rvalue(raw)
     }
 
     fn parse_raw_rvalue(token: Pair<Rule>) -> RValue {

@@ -10,36 +10,30 @@ impl Debug for RValue {
 
 impl Display for RValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        macro_rules! forward_fmt {
-            ($ty:ident) => {
-                if let RValue::$ty(inner) = self {
-                    return inner.fmt(f);
-                }
-            };
+        match self {
+            RValue::Add(inner) => inner.fmt(f),
+            RValue::Sub(inner) => inner.fmt(f),
+            RValue::Mult(inner) => inner.fmt(f),
+            RValue::Div(inner) => inner.fmt(f),
+            RValue::Rem(inner) => inner.fmt(f),
+            RValue::IntOr(inner) => inner.fmt(f),
+            RValue::IntAnd(inner) => inner.fmt(f),
+            RValue::IntXor(inner) => inner.fmt(f),
+            RValue::BoolOr(inner) => inner.fmt(f),
+            RValue::BoolAnd(inner) => inner.fmt(f),
+            RValue::BoolXor(inner) => inner.fmt(f),
+            RValue::RShift(inner) => inner.fmt(f),
+            RValue::LShift(inner) => inner.fmt(f),
+            RValue::Comparison(inner) => inner.fmt(f),
+            RValue::Not(inner) => inner.fmt(f),
+            RValue::Neg(inner) => inner.fmt(f),
+            RValue::Parenthesized(inner) => inner.fmt(f),
+            RValue::Constant(inner) => inner.fmt(f),
+            RValue::Call(inner) => inner.fmt(f),
+            RValue::Ref(inner) => inner.fmt(f),
+            RValue::Deref(inner) => inner.fmt(f),
+            RValue::LValue(inner) => inner.fmt(f),
         }
-        forward_fmt!(Add);
-        forward_fmt!(Sub);
-        forward_fmt!(Mult);
-        forward_fmt!(Div);
-        forward_fmt!(Rem);
-        forward_fmt!(IntOr);
-        forward_fmt!(IntAnd);
-        forward_fmt!(IntXor);
-        forward_fmt!(BoolOr);
-        forward_fmt!(BoolAnd);
-        forward_fmt!(BoolXor);
-        forward_fmt!(RShift);
-        forward_fmt!(LShift);
-        forward_fmt!(Comparison);
-        forward_fmt!(Not);
-        forward_fmt!(Neg);
-        forward_fmt!(Parenthesized);
-        forward_fmt!(Constant);
-        forward_fmt!(Call);
-        forward_fmt!(Ref);
-        forward_fmt!(Deref);
-        forward_fmt!(LValue);
-        unreachable!();
     }
 }
 
@@ -66,7 +60,7 @@ impl Display for ComparisonOperator {
     }
 }
 
-macro_rules! impl_debug_for_binary_operation {
+macro_rules! impl_display_for_binary_operation {
     ($ty:ident, $lhs:ident, $rhs:ident, $op:expr) => {
         impl Display for $ty {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -76,7 +70,7 @@ macro_rules! impl_debug_for_binary_operation {
     };
 }
 
-macro_rules! impl_debug_for_binary_operation_with_prefix {
+macro_rules! impl_display_for_binary_operation_with_prefix {
     ($ty:ident, $lhs:ident, $rhs:ident, $ntp:ident, $op:expr) => {
         impl Display for $ty {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -86,19 +80,19 @@ macro_rules! impl_debug_for_binary_operation_with_prefix {
     };
 }
 
-impl_debug_for_binary_operation_with_prefix!(RValueAdd, lhs, rhs, num_type_prefix, "+");
-impl_debug_for_binary_operation_with_prefix!(RValueSub, lhs, rhs, num_type_prefix, "-");
-impl_debug_for_binary_operation_with_prefix!(RValueMult, lhs, rhs, num_type_prefix, "*");
-impl_debug_for_binary_operation_with_prefix!(RValueDiv, lhs, rhs, num_type_prefix, "/");
-impl_debug_for_binary_operation_with_prefix!(RValueRem, lhs, rhs, num_type_prefix, "%");
-impl_debug_for_binary_operation!(RValueIntOr, lhs, rhs, "|");
-impl_debug_for_binary_operation!(RValueIntAnd, lhs, rhs, "&");
-impl_debug_for_binary_operation!(RValueIntXor, lhs, rhs, "^");
-impl_debug_for_binary_operation!(RValueBoolOr, lhs, rhs, "||");
-impl_debug_for_binary_operation!(RValueBoolAnd, lhs, rhs, "&&");
-impl_debug_for_binary_operation!(RValueBoolXor, lhs, rhs, "^^");
-impl_debug_for_binary_operation_with_prefix!(RValueRShift, lhs, rhs, num_type_prefix, ">>");
-impl_debug_for_binary_operation!(RValueLShift, lhs, rhs, "<<");
+impl_display_for_binary_operation_with_prefix!(RValueAdd, lhs, rhs, num_type_prefix, "+");
+impl_display_for_binary_operation_with_prefix!(RValueSub, lhs, rhs, num_type_prefix, "-");
+impl_display_for_binary_operation_with_prefix!(RValueMult, lhs, rhs, num_type_prefix, "*");
+impl_display_for_binary_operation_with_prefix!(RValueDiv, lhs, rhs, num_type_prefix, "/");
+impl_display_for_binary_operation_with_prefix!(RValueRem, lhs, rhs, num_type_prefix, "%");
+impl_display_for_binary_operation!(RValueIntOr, lhs, rhs, "|");
+impl_display_for_binary_operation!(RValueIntAnd, lhs, rhs, "&");
+impl_display_for_binary_operation!(RValueIntXor, lhs, rhs, "^");
+impl_display_for_binary_operation!(RValueBoolOr, lhs, rhs, "||");
+impl_display_for_binary_operation!(RValueBoolAnd, lhs, rhs, "&&");
+impl_display_for_binary_operation!(RValueBoolXor, lhs, rhs, "^^");
+impl_display_for_binary_operation_with_prefix!(RValueRShift, lhs, rhs, num_type_prefix, ">>");
+impl_display_for_binary_operation!(RValueLShift, lhs, rhs, "<<");
 
 impl Display for RValueComparison {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -110,7 +104,7 @@ impl Display for RValueComparison {
     }
 }
 
-macro_rules! impl_debug_for_unary_operation_with_prefix {
+macro_rules! impl_display_for_unary_operation_with_prefix {
     ($ty:ident, $inner:ident, $op:expr) => {
         impl Display for $ty {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -120,8 +114,8 @@ macro_rules! impl_debug_for_unary_operation_with_prefix {
     };
 }
 
-impl_debug_for_unary_operation_with_prefix!(RValueNot, op, "!");
-impl_debug_for_unary_operation_with_prefix!(RValueNeg, op, "-");
+impl_display_for_unary_operation_with_prefix!(RValueNot, op, "!");
+impl_display_for_unary_operation_with_prefix!(RValueNeg, op, "-");
 
 impl Display for RValueParenthesized {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
