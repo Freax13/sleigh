@@ -10,6 +10,8 @@ pub use lvalue::*;
 pub use rvalue::*;
 
 use parser::SleighParser;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::{mem::replace, ops::Range};
 
 pub struct Spec {
@@ -26,7 +28,36 @@ pub struct Spec {
 
 impl Spec {
     pub fn parse(s: &str) -> Self {
-        SleighParser::parse_file(s)
+        let mut spec = SleighParser::parse_file(s);
+        spec.expand_macros();
+        spec
+    }
+
+    fn expand_macros(&mut self) {
+        for constructor in self.constructors.iter_mut() {
+            while let Some(pos) = constructor
+                .actions
+                .iter()
+                .position(|a| matches!(a, Action::Macro(_)))
+            {
+                let action = constructor.actions.remove(pos);
+                let macro_invocation = if let Action::Macro(m) = action {
+                    m
+                } else {
+                    unreachable!()
+                };
+                for (action, i) in self
+                    .macros
+                    .iter()
+                    .find(|m| m.name == macro_invocation.r#macro)
+                    .unwrap()
+                    .expand(&macro_invocation.args)
+                    .zip(pos..)
+                {
+                    constructor.actions.insert(i, action);
+                }
+            }
+        }
     }
 }
 
@@ -151,6 +182,43 @@ pub struct Macro {
     pub name: String,
     pub args: Vec<String>,
     pub actions: Vec<Action>,
+}
+
+impl Macro {
+    pub fn expand<'s>(&'s self, args: &'s [RValue]) -> impl Iterator<Item = Action> + 's {
+        static EXPAND_COUNTER: AtomicU64 = AtomicU64::new(0);
+        let cnt = EXPAND_COUNTER.fetch_add(1, Ordering::Relaxed);
+
+        let names = self
+            .args
+            .iter()
+            .map(|s| s.as_str())
+            .chain(self.actions.iter().filter_map(|a| match a {
+                Action::Label(label) => Some(label.as_str()),
+                Action::LocalDecl(local_decl) => Some(local_decl.name.field.as_str()),
+                _ => None,
+            }));
+
+        let mut renames = HashMap::new();
+        for name in names {
+            renames.insert(name.to_string(), format!("macro expand {} {}", name, cnt));
+        }
+
+        self.args
+            .iter()
+            .cloned()
+            .map(|name| LValueIdent {
+                field: name,
+                size: None,
+            })
+            .zip(args.iter().cloned())
+            .map(|(name, val)| Action::LocalDecl(ActionLocalDecl { name, val }))
+            .chain(self.actions.iter().cloned())
+            .map(move |mut a| {
+                a.rename(&renames);
+                a
+            })
+    }
 }
 
 struct WithBlockContext<'s> {

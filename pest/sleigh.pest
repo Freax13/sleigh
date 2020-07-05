@@ -119,14 +119,14 @@ comparison_operator = { "==" | "!=" | "<=" | "<" | ">=" | ">" }
 rvalue_ident_or_constant = { (ident | integer) ~ (":" ~ integer)? }
 
 action = _{ (raw_action ~ ";") | label }
-raw_action = _{ action_local_decl | action_export | action_assignment | action_build | action_if | action_goto | action_macro | action_call | action_return }
+raw_action = _{ action_local_decl | action_export | action_assignment | action_build | action_if | action_goto | action_macro_or_pcode | action_call | action_return }
 action_local_decl = { "local" ~ lvalue_ident ~ "=" ~ rvalue }
 action_export = { "export" ~ rvalue }
 action_assignment = { lvalue ~ "=" ~ rvalue }
 action_build = { "build" ~ ident }
 action_if = { "if" ~ rvalue ~ raw_action }
 action_goto = { "goto" ~ (label | rvalue) }
-action_macro = { ident ~ "(" ~ (rvalue ~ ("," ~ rvalue)*)? ~ ")" }
+action_macro_or_pcode = { ident ~ "(" ~ (rvalue ~ ("," ~ rvalue)*)? ~ ")" }
 action_call = { "call" ~ rvalue }
 action_return = { "return" ~ rvalue }
 

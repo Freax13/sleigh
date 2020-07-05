@@ -251,7 +251,7 @@ impl SleighParser {
             token = tokens.next().unwrap();
         }
 
-        let actions = Self::parse_action_block(token);
+        let actions = self.parse_action_block(token);
 
         self.macros.push(Macro {
             name,
@@ -309,7 +309,7 @@ impl SleighParser {
             token = tokens.next().unwrap();
         }
 
-        let actions = Self::parse_action_block(token);
+        let actions = self.parse_action_block(token);
 
         if let Some(ctx) = with_context {
             if let Some(table) = ctx.table {
@@ -496,12 +496,12 @@ impl SleighParser {
         }
     }
 
-    fn parse_action_block(token: Pair<Rule>) -> Vec<Action> {
+    fn parse_action_block(&self, token: Pair<Rule>) -> Vec<Action> {
         debug_assert_eq!(token.as_rule(), Rule::action_block);
-        token.into_inner().map(Self::parse_action).collect()
+        token.into_inner().map(|t| self.parse_action(t)).collect()
     }
 
-    fn parse_action(token: Pair<Rule>) -> Action {
+    fn parse_action(&self, token: Pair<Rule>) -> Action {
         let rule = token.as_rule();
 
         if let Rule::label = rule {
@@ -531,7 +531,7 @@ impl SleighParser {
             }
             Rule::action_if => {
                 let cond = Self::parse_rvalue(tokens.next().unwrap());
-                let action = Self::parse_action(tokens.next().unwrap());
+                let action = self.parse_action(tokens.next().unwrap());
                 Action::If(Box::new(ActionIf { cond, action }))
             }
             Rule::action_goto => {
@@ -547,10 +547,21 @@ impl SleighParser {
                     }
                 }
             }
-            Rule::action_macro => {
-                let r#macro = tokens.next().unwrap().as_str().to_string();
-                let args = tokens.map(Self::parse_rvalue).collect();
-                Action::Macro(ActionMacro { r#macro, args })
+            Rule::action_macro_or_pcode => {
+                let name = tokens.next().unwrap().as_str().to_string();
+                if self.pcodeops.iter().any(|p| p.name == name) {
+                    let args = tokens.map(Self::parse_rvalue).collect();
+                    Action::PCodeOp(ActionPCodeOp {
+                        pcopdeop: name,
+                        args,
+                    })
+                } else {
+                    let args = tokens.map(Self::parse_rvalue).collect();
+                    Action::Macro(ActionMacro {
+                        r#macro: name,
+                        args,
+                    })
+                }
             }
             Rule::action_call => {
                 let address = Self::parse_rvalue(tokens.next().unwrap());
