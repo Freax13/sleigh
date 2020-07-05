@@ -29,7 +29,6 @@ impl Context {
     fn preprocess_file(&mut self, dir: &Path, file: impl AsRef<Path>) {
         let file = dir.join(file);
 
-        println!("{:?}", file);
         let raw = read_to_string(file).unwrap();
         let lines = Preprocessor::parse(Rule::file, &raw).unwrap_or_else(|e| panic!("{}", e));
         self.preprocess_items(dir, lines);
