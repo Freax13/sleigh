@@ -1,0 +1,140 @@
+WHITESPACE = _{ " " | "\t" | NEWLINE }
+COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* }
+
+string_content = { (!"\"" ~ ANY)* }
+string = ${ "\"" ~ string_content ~ "\"" }
+ident = @{ !ASCII_DIGIT ~ (ASCII_ALPHANUMERIC | "_" | ".")+ }
+ident_or_string = { string | ident }
+
+integer = ${ ("\"" ~ raw_integer ~ "\"") | raw_integer }
+raw_integer = _{ integer_binary | integer_hexadecimal | integer_decimal }
+integer_decimal = { ASCII_DIGIT+ }
+integer_binary = { "0b" ~ ASCII_BIN_DIGIT+ }
+integer_hexadecimal = { "0x" ~ ASCII_HEX_DIGIT+ }
+
+signed_integer = ${ ("\"" ~ raw_signed_integer ~ "\"") | raw_signed_integer }
+raw_signed_integer = { sign? ~ raw_integer }
+sign = { "+" | "-" }
+
+string_list = { ident_or_string | ("[" ~ ("_" | ident_or_string)* ~ "]") }
+integer_list = { integer | ("[" ~ ("_" | integer)* ~ "]") }
+
+file = _{ WHITESPACE* ~ stmt+ ~ EOI }
+stmt = _{ ((stmt_define | stmt_attach) ~ ";") | with_block | stmt_macro | constructor }
+
+stmt_define = _{ "define" ~ (define_alignment | define_endianness | define_space | define_register | define_bitrange | define_pcodeop | define_token | define_context) }
+stmt_attach = _{ "attach" ~ (attach_variables | attach_values | attach_names ) }
+
+define_alignment = { "alignment" ~ "=" ~ integer }
+define_endianness = { "endian" ~ "=" ~ endianness }
+define_space = { "space" ~ ident ~ space_attribute* }
+define_register = { "register" ~ "offset" ~ "=" ~ integer ~ "size" ~ "=" ~ integer ~ string_list }
+define_bitrange = { "bitrange" ~ bitrange+ }
+define_pcodeop = { "pcodeop" ~ ident }
+define_token = { "token" ~ ident ~ "(" ~ integer ~ ")" ~ field+ }
+define_context = { "context" ~ ident ~ context_field+ }
+
+endianness = _{ little_endian | big_endian }
+little_endian = { "little" }
+big_endian = { "big" }
+
+space_attribute = _{ space_attribute_type | space_attribute_size | space_attribute_default | space_attribute_wordsize }
+space_attribute_type = { "type" ~ "=" ~ space_type }
+space_attribute_size = { "size" ~ "=" ~ integer}
+space_attribute_default = { "default" }
+space_attribute_wordsize = { "wordsize" ~ "=" ~ integer}
+space_type = { "ram_space" | "rom_space" | "register_space" }
+
+bitrange = { ident ~ "=" ~ ident ~ "[" ~ integer ~ "," ~ integer ~ "]" }
+
+field = { ident ~ "=" ~ "(" ~ integer ~ "," ~ integer ~ ")" ~ field_attribute* }
+field_attribute = { "signed" | "dec" | "hex" }
+context_field = { ident ~ "=" ~ "(" ~ integer ~ "," ~ integer ~ ")" ~ context_field_attribute* }
+context_field_attribute = { field_attribute | "noflow" }
+
+attach_variables = { "variables" ~ string_list ~ string_list }
+attach_values = { "values" ~ string_list ~ integer_list }
+attach_names = { "names" ~ string_list ~ string_list }
+
+with_block = { "with" ~ ident? ~ ":" ~ constraint ~ calculation_block? ~ "{" ~ stmt* ~ "}" }
+
+constructor = { table_header ~ constraint ~ calculation_block? ~ action_block }
+table_header = ${ ident? ~ WHITESPACE* ~ ":" ~ constructor_mnemonic ~ "is" }
+constructor_mnemonic = @{ (!("is" ~ !ASCII_ALPHANUMERIC) ~ ANY)* }
+calculation_block = { "[" ~ calculation+ ~ "]" }
+action_block = { ("{" ~ action* ~ "}") | "unimpl" }
+
+constraint = { constraint_and }
+constraint_and = { constraint_or ~ ("&" ~ constraint_or)* }
+constraint_or = { constraint_semi ~ ("|" ~ constraint_semi)* }
+constraint_semi = { basic_constraint ~ (";" ~ constraint)* }
+basic_constraint = _{ (basic_constraint_parenthesized | basic_constraint_comparison | basic_constraint_exists) ~ "..."? }
+basic_constraint_parenthesized = { "(" ~ constraint ~ ")" }
+basic_constraint_comparison = { ident ~ constraint_comparison ~ constraint_rvalue }
+basic_constraint_exists = { ident }
+
+constraint_rvalue = { constraint_rvalue_int_add }
+constraint_rvalue_int_add = { constraint_rvalue_basic ~ ("+" ~ constraint_rvalue)* }
+constraint_rvalue_basic = _{ signed_integer | ident }
+
+constraint_comparison = _{ num_type_prefix? ~ constraint_comparison_operator }
+constraint_comparison_operator = { "=" | "!=" | "<" | ">" }
+
+calculation = _{ (calculation_assignment | calculation_globalset) ~ ";" }
+calculation_assignment = { ident ~ "=" ~ rvalue }
+calculation_globalset = { "globalset" ~ "(" ~ rvalue ~ "," ~ rvalue ~ ")" }
+
+rvalue = { rvalue_add }
+rvalue_add = { rvalue_sub ~ (num_type_prefix? ~ "+" ~ rvalue_sub)* }
+rvalue_sub = { rvalue_mult ~ (num_type_prefix? ~ "-" ~ rvalue_mult)* }
+rvalue_mult = { rvalue_div ~ (num_type_prefix? ~ "*" ~ rvalue_div)* }
+rvalue_div = { rvalue_rem ~ (num_type_prefix? ~ "/" ~ rvalue_rem)* }
+rvalue_rem = { rvalue_int_or ~ (num_type_prefix? ~ "%" ~ rvalue_int_or)* }
+rvalue_int_or = { rvalue_int_and ~ ("|" ~ rvalue_int_and)* }
+rvalue_int_and = { rvalue_int_xor ~ ("&" ~ rvalue_int_xor)* }
+rvalue_int_xor = { rvalue_bool_or ~ ("^" ~ rvalue_bool_or)* }
+rvalue_bool_or = { rvalue_bool_and ~ (("||" | "$or") ~ rvalue_bool_and)* }
+rvalue_bool_and = { rvalue_bool_xor ~ (("&&" | "$and") ~ rvalue_bool_xor)* }
+rvalue_bool_xor = { rvalue_rshift ~ (("^^" | "$xor") ~ rvalue_rshift)* }
+rvalue_rshift = { rvalue_lshift ~ (num_type_prefix? ~ ">>" ~ rvalue_lshift)* }
+rvalue_lshift = { rvalue_bool_comparison ~ ("<<" ~ rvalue_bool_comparison)* }
+rvalue_bool_comparison = { rvalue_not ~ (comparison ~ rvalue)? }
+rvalue_not = { not_operator? ~ rvalue_neg }
+rvalue_neg = { neg_operator? ~ rvalue_basic }
+rvalue_basic = _{ rvalue_basic_parenthesized | rvalue_basic_int | rvalue_basic_call | rvalue_basic_ref | rvalue_basic_deref | lvalue }
+rvalue_basic_parenthesized = { "(" ~ rvalue ~ ")" }
+rvalue_basic_int = { signed_integer ~ (":" ~ integer)? }
+rvalue_basic_call = { ident ~ "(" ~ (rvalue ~ ("," ~ rvalue)*)? ~ ")" }
+rvalue_basic_ref = { "&" ~ (":" ~ integer)? ~ ident }
+rvalue_basic_deref = { "[" ~ rvalue ~ "]" }
+
+not_operator = { "!" | "~" }
+neg_operator = { "-" }
+
+num_type_prefix = { "s" | "f" }
+
+comparison = _{ num_type_prefix? ~ comparison_operator }
+comparison_operator = { "==" | "!=" | "<=" | "<" | ">=" | ">" }
+
+rvalue_ident_or_constant = { (ident | integer) ~ (":" ~ integer)? }
+
+action = _{ (raw_action ~ ";") | label }
+raw_action = _{ action_local_decl | action_export | action_assignment | action_build | action_if | action_goto | action_macro | action_call | action_return }
+action_local_decl = { "local" ~ lvalue_ident ~ "=" ~ rvalue }
+action_export = { "export" ~ rvalue }
+action_assignment = { lvalue ~ "=" ~ rvalue }
+action_build = { "build" ~ ident }
+action_if = { "if" ~ rvalue ~ raw_action }
+action_goto = { "goto" ~ (label | rvalue) }
+action_macro = { ident ~ "(" ~ (rvalue ~ ("," ~ rvalue)*)? ~ ")" }
+action_call = { "call" ~ rvalue }
+action_return = { "return" ~ rvalue }
+
+label = { "<" ~ ident ~ ">" }
+
+lvalue = { lvalue_slice | lvalue_ident | lvalue_ref }
+lvalue_slice = { ident ~ "[" ~ integer ~ "," ~ integer ~ "]" }
+lvalue_ident = { ident ~ (":" ~ integer)? }
+lvalue_ref = { "*" ~ ("[" ~ ident ~ "]")? ~ (":" ~ integer)? ~ rvalue }
+
+stmt_macro = { "macro" ~ ident ~ "(" ~ (ident ~ ("," ~ ident)*)? ~ ")" ~ action_block }

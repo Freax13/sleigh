@@ -1,0 +1,35 @@
+WHITESPACE = _{ " " | "\t" }
+comment_after_directive = { "#" ~ (!NEWLINE ~ ANY)* }
+
+string_content = { (!"\"" ~ ANY)* }
+string = ${ "\"" ~ string_content ~ "\"" }
+ident = @{ !ASCII_DIGIT ~ (ASCII_ALPHANUMERIC | "_" | ".")+ }
+
+file = _{ silent_block ~ EOI }
+silent_block = _{ (directive | sleigh_line)+ }
+block = { silent_block }
+
+sleigh_line = { !"@" ~ (!NEWLINE ~ ANY)* ~ NEWLINE }
+
+directive = _{ (define | include | if_block) }
+define = { "@define" ~ ident ~ string }
+include = { "@include" ~ string }
+
+// conditionals
+if_block = { condition ~ block ~ (elif_block ~ block)* ~ (else_block ~ block)? ~ endif }
+elif_block = { "@elif" ~ expr ~ comment_after_directive? ~ NEWLINE }
+else_block = { "@else" ~ comment_after_directive? ~ NEWLINE }
+endif = { "@endif" ~ comment_after_directive? ~ NEWLINE }
+
+condition = _{ (ifdef | ifndef | if_cond) ~ comment_after_directive? ~ NEWLINE }
+ifdef = { "@ifdef" ~ ident }
+ifndef = { "@ifndef" ~ ident }
+if_cond = { "@if" ~ expr }
+
+expr = _{ or | and | raw_expr }
+raw_expr = _{ defined | comparison }
+defined = { "defined" ~ "(" ~ ident ~ ")" }
+comparison = { ident ~ "==" ~ string }
+
+or = { raw_expr ~ "||" ~ expr }
+and = { raw_expr ~ "&&" ~ expr }
