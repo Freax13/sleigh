@@ -112,7 +112,7 @@ pub struct TableHeader {
     pub mnemonic: String,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ComparisonOperator {
     Equal,
     NotEqual,
@@ -122,7 +122,7 @@ pub enum ComparisonOperator {
     GreaterEqual,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum NumTypePrefix {
     Default,
     Signed,

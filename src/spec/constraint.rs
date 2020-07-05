@@ -1,4 +1,4 @@
-use crate::spec::{ComparisonOperator, NumTypePrefix};
+use crate::{ComparisonOperator, NumTypePrefix};
 
 #[derive(Clone)]
 pub enum Constraint {

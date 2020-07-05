@@ -1,4 +1,4 @@
-use crate::spec::{LValue, LValueIdent, RValue};
+use crate::{LValue, LValueIdent, RValue};
 
 pub enum Action {
     Label(String),

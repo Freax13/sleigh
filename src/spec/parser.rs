@@ -1,4 +1,5 @@
-use crate::spec::*;
+use super::WithBlockContext;
+use crate::*;
 use pest::{
     iterators::{Pair, Pairs},
     Parser,
@@ -564,6 +565,11 @@ impl SleighParser {
     }
 
     fn parse_rvalue(token: Pair<Rule>) -> RValue {
+        let raw = Self::parse_raw_rvalue(token);
+        fix_precedence(raw)
+    }
+
+    fn parse_raw_rvalue(token: Pair<Rule>) -> RValue {
         let rule = token.as_rule();
 
         if let Rule::lvalue = rule {
@@ -689,8 +695,8 @@ impl SleighParser {
                 RValue::Ref(RValueRef { field, size })
             }
             Rule::rvalue_basic_deref => {
-                let address = Self::parse_rvalue(tokens.next().unwrap());
-                RValue::Deref(Box::new(RValueDeref { address }))
+                let op = Self::parse_rvalue(tokens.next().unwrap());
+                RValue::Deref(Box::new(RValueDeref { op }))
             }
             r => unreachable!("{:?}", r),
         }

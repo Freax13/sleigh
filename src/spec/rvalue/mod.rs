@@ -1,6 +1,12 @@
-use crate::spec::{ComparisonOperator, LValue, NumTypePrefix};
+mod convert;
+mod debug;
+mod precedence;
 
-#[derive(Clone)]
+pub use precedence::fix_precedence;
+
+use crate::{ComparisonOperator, LValue, NumTypePrefix};
+
+#[derive(Clone, PartialEq)]
 pub enum RValue {
     Add(Box<RValueAdd>),
     Sub(Box<RValueSub>),
@@ -26,129 +32,129 @@ pub enum RValue {
     LValue(LValue),
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueAdd {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueSub {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueMult {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueDiv {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueRem {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueIntOr {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueIntAnd {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueIntXor {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueRShift {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueLShift {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueNot {
     pub op: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueNeg {
     pub op: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueParenthesized {
     pub op: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct RValueConstant {
     pub value: i128,
     pub size: Option<u8>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueCall {
     pub call: String,
     pub args: Vec<RValue>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueRef {
     pub field: String,
     pub size: Option<u8>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueDeref {
-    pub address: RValue,
+    pub op: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueBoolOr {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueBoolAnd {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueBoolXor {
     pub lhs: RValue,
     pub rhs: RValue,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct RValueComparison {
     pub lhs: RValue,
     pub num_type_prefix: NumTypePrefix,
