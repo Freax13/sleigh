@@ -24,12 +24,24 @@ fn main() {
         ),
     ] {
         println!("{}{}", dir, file);
+
         let res = preprocess(dir, file);
         let spec = Spec::parse(&res);
 
         macro_rules! test_disassembly {
             ($data:expr) => {
-                let state = State::new(&spec, $data);
+                let mut state = State::new(&spec, $data);
+
+                if *file == "x86-64.slaspec" {
+                    state.set_context("addrsize", 2);
+                    state.set_context("bit64", 1);
+                    state.set_context("opsize", 1);
+                    state.set_context("rexprefix", 0);
+                } else if *file == "x86.slaspec" {
+                    state.set_context("addrsize", 1);
+                    state.set_context("opsize", 1);
+                }
+
                 let c = state.match_constructor(None);
                 if let Some(c) = c {
                     println!("{}:{}", c.header.table, c.header.mnemonic);

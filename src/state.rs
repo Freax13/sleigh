@@ -1,4 +1,4 @@
-use crate::{ConstraintRValue, Constructor, Endianness, Spec};
+use crate::{ConstraintRValue, Constructor, ContextField, Endianness, Spec};
 use std::{collections::HashMap, iter::repeat, sync::Arc};
 
 #[derive(Clone)]
@@ -20,12 +20,25 @@ impl<'s> State<'s> {
                         (
                             r.name.clone(),
                             Register {
-                                data: vec![0x6; r.size as usize],
+                                data: vec![0x0; r.size as usize],
                             },
                         )
                     })
                     .collect(),
             ),
+        }
+    }
+
+    pub fn set_context(&mut self, name: &str, value: i128) {
+        let registers = Arc::make_mut(&mut self.registers);
+
+        for ctx in self.spec.contexts.iter() {
+            for field in ctx.fields.iter() {
+                if field.name == name {
+                    let register = registers.get_mut(&ctx.register).unwrap();
+                    register.set_context_field(field, value, self.spec.endianness);
+                }
+            }
         }
     }
 
@@ -104,6 +117,29 @@ impl<'s> State<'s> {
     }
 }
 
+#[derive(Clone)]
 pub struct Register {
     data: Vec<u8>,
+}
+
+impl Register {
+    pub fn set_context_field(&mut self, field: &ContextField, value: i128, endianness: Endianness) {
+        let start = field.range.start as usize;
+        let end = field.range.end as usize;
+
+        for i in start..end {
+            let val = value >> (i - start);
+            let offset = match endianness {
+                Endianness::Little => i / 8,
+                Endianness::Big => self.data.len() - i / 8 - 1,
+            };
+            if val != 0 {
+                // set bit
+                self.data[offset] |= 1 << (i % 8);
+            } else {
+                // clear bit
+                self.data[offset] &= !(1 << (i % 8));
+            }
+        }
+    }
 }

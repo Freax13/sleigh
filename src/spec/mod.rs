@@ -68,6 +68,7 @@ impl Spec {
     }
 }
 
+#[derive(Copy, Clone)]
 pub enum Endianness {
     Big,
     Little,
