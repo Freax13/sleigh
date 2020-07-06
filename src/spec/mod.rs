@@ -12,10 +12,14 @@ pub use lvalue::*;
 pub use precedence::{fix_precedence_constraint, fix_precedence_rvalue};
 pub use rvalue::*;
 
+use crate::State;
 use parser::SleighParser;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::{mem::replace, ops::Range};
+use std::{
+    collections::HashMap,
+    mem::replace,
+    ops::Range,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 pub struct Spec {
     pub endianness: Endianness,
@@ -141,6 +145,12 @@ pub struct Constructor {
     pub actions: Vec<Action>,
 }
 
+impl Constructor {
+    pub fn matches(&self, state: State) -> bool {
+        self.constraint.matches(state)
+    }
+}
+
 pub struct TableHeader {
     pub table: String,
     pub mnemonic: String,
@@ -235,7 +245,12 @@ impl WithBlockContext<'_> {
         if self.table.is_none() {
             self.table = other.table;
         }
-        let constraint = replace(&mut self.constraint, Constraint::Exists(String::new()));
+        let constraint = replace(
+            &mut self.constraint,
+            Constraint::Exists(ConstraintExists {
+                name: String::new(),
+            }),
+        );
         self.constraint = Constraint::And(Box::new(ConstraintAnd {
             lhs: constraint,
             rhs: other.constraint.clone(),

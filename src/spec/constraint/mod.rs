@@ -1,5 +1,6 @@
 mod convert;
 mod debug;
+mod matches;
 
 use crate::{ComparisonOperator, NumTypePrefix};
 
@@ -11,7 +12,7 @@ pub enum Constraint {
     Semi(Box<ConstraintSemi>),
     Parenthesized(Box<Constraint>),
     Comparison(ConstraintComparison),
-    Exists(String),
+    Exists(ConstraintExists),
 }
 
 #[derive(Clone, PartialEq)]
@@ -43,6 +44,11 @@ pub struct ConstraintComparison {
     pub num_type: NumTypePrefix,
     pub comparison: ComparisonOperator,
     pub rhs: ConstraintRValue,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ConstraintExists {
+    pub name: String,
 }
 
 #[derive(Clone, PartialEq)]

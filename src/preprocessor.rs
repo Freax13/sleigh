@@ -102,10 +102,6 @@ impl Context {
                         s = &s[pos + 2..];
                         let end = s.find(')').unwrap();
                         let name = &s[..end];
-                        if !self.defines.contains_key(name) {
-                            dbg!(name);
-                            dbg!(&self.defines);
-                        }
                         self.result += &self.defines[name];
                         s = &s[end + 1..];
                     }

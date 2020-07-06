@@ -426,8 +426,8 @@ impl SleighParser {
                 })
             }
             Rule::basic_constraint_exists => {
-                let ident = tokens.next().unwrap().as_str().to_string();
-                Constraint::Exists(ident)
+                let name = tokens.next().unwrap().as_str().to_string();
+                Constraint::Exists(ConstraintExists { name })
             }
             Rule::basic_constraint_parenthesized => {
                 let constraint = Self::parse_constraint(tokens.next().unwrap());

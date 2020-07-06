@@ -16,7 +16,7 @@ impl Display for Constraint {
             Constraint::Semi(inner) => inner.fmt(f),
             Constraint::Parenthesized(inner) => write!(f, "({})", inner),
             Constraint::Comparison(inner) => inner.fmt(f),
-            Constraint::Exists(inner) => write!(f, "{}", inner),
+            Constraint::Exists(inner) => write!(f, "{}", inner.name),
         }
     }
 }

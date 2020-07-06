@@ -1,6 +1,5 @@
 use super::Fix;
-use crate::spec::constraint::*;
-use crate::{impl_for_binary_operation, impl_for_unary_operation};
+use crate::{impl_for_binary_operation, impl_for_unary_operation, spec::constraint::*};
 
 impl Fix<Constraint> for Constraint {
     fn fix(&self) -> Constraint {
@@ -58,13 +57,21 @@ impl_for_unary_operation!(Constraint, ConstraintEllipsis, op, 18, false);
 
 #[cfg(test)]
 mod tests {
-    use crate::{spec::precedence::fix_precedence, Constraint, ConstraintAnd, ConstraintOr};
+    use crate::{
+        spec::precedence::fix_precedence, Constraint, ConstraintAnd, ConstraintExists, ConstraintOr,
+    };
 
     #[test]
     fn test_precedence() {
-        let a: Constraint = Constraint::Exists("A".to_string());
-        let b: Constraint = Constraint::Exists("B".to_string());
-        let c: Constraint = Constraint::Exists("C".to_string());
+        let a: Constraint = Constraint::Exists(ConstraintExists {
+            name: "A".to_string(),
+        });
+        let b: Constraint = Constraint::Exists(ConstraintExists {
+            name: "B".to_string(),
+        });
+        let c: Constraint = Constraint::Exists(ConstraintExists {
+            name: "C".to_string(),
+        });
 
         assert_eq!(
             fix_precedence(Constraint::And(Box::new(ConstraintAnd {
@@ -75,11 +82,8 @@ mod tests {
                 }))
             }))),
             Constraint::Or(Box::new(ConstraintOr {
-                lhs: Constraint::And(Box::new(ConstraintAnd {
-                    lhs: a.clone(),
-                    rhs: b.clone(),
-                })),
-                rhs: c.clone(),
+                lhs: Constraint::And(Box::new(ConstraintAnd { lhs: a, rhs: b })),
+                rhs: c,
             }))
         );
     }

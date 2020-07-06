@@ -1,4 +1,4 @@
-use sleigh::{preprocess, Spec};
+use sleigh::{preprocess, Spec, State};
 
 fn main() {
     for (dir, file) in &[
@@ -23,7 +23,24 @@ fn main() {
             "Dalvik.slaspec",
         ),
     ] {
+        println!("{}{}", dir, file);
         let res = preprocess(dir, file);
-        let _spec = Spec::parse(&res);
+        let spec = Spec::parse(&res);
+
+        macro_rules! test_disassembly {
+            ($data:expr) => {
+                let state = State::new(&spec, $data);
+                let c = state.match_constructor(None);
+                if let Some(c) = c {
+                    println!("{}:{}", c.header.table, c.header.mnemonic);
+                }
+            };
+        }
+
+        test_disassembly!(&[0x90]);
+        test_disassembly!(&[0x50]);
+        test_disassembly!(&[0x51]);
+        test_disassembly!(&[0x0f, 0x05]);
+        test_disassembly!(&[0x48, 0xB8, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     }
 }
