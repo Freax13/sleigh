@@ -11,6 +11,7 @@ impl Constraint {
             Constraint::Parenthesized(inner) => inner.matches(state),
             Constraint::Comparison(inner) => inner.matches(state),
             Constraint::Exists(inner) => inner.matches(state),
+            Constraint::Constructor(inner) => inner.matches(state),
         }
     }
 
@@ -29,6 +30,7 @@ impl Constraint {
                 .len(state.clone())
                 .or_else(|| inner.rhs.len(state)),
             Constraint::Exists(inner) => inner.len(state),
+            Constraint::Constructor(inner) => inner.len(state),
         }
     }
 }
@@ -118,5 +120,25 @@ impl ConstraintExists {
         } else {
             state.token_len(&self.name)
         }
+    }
+}
+
+impl ConstraintConstructor {
+    pub fn matches(&self, state: State) -> bool {
+        // TODO: handle this correctly
+        if self.name == "instruction" {
+            return false;
+        }
+        state.match_constructor(Some(&self.name)).is_some()
+    }
+
+    fn len(&self, state: State) -> Option<usize> {
+        let constructor = state
+            .spec
+            .constructors
+            .iter()
+            .find(|c| c.header.table == self.name)
+            .unwrap();
+        constructor.constraint.len(state)
     }
 }

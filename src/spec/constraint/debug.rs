@@ -17,6 +17,7 @@ impl Display for Constraint {
             Constraint::Parenthesized(inner) => write!(f, "({})", inner),
             Constraint::Comparison(inner) => inner.fmt(f),
             Constraint::Exists(inner) => write!(f, "{}", inner.name),
+            Constraint::Constructor(inner) => write!(f, "{}", inner.name),
         }
     }
 }

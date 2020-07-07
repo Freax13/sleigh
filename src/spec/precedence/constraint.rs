@@ -8,9 +8,10 @@ impl Fix<Constraint> for Constraint {
             Constraint::And(inner) => inner.fix(),
             Constraint::Or(inner) => inner.fix(),
             Constraint::Semi(inner) => inner.fix(),
-            Constraint::Parenthesized(_) | Constraint::Comparison(_) | Constraint::Exists(_) => {
-                self.clone()
-            }
+            Constraint::Parenthesized(_)
+            | Constraint::Comparison(_)
+            | Constraint::Exists(_)
+            | Constraint::Constructor(_) => self.clone(),
         }
     }
 
@@ -20,9 +21,10 @@ impl Fix<Constraint> for Constraint {
             Constraint::And(inner) => inner.set_left(left),
             Constraint::Or(inner) => inner.set_left(left),
             Constraint::Semi(inner) => inner.set_left(left),
-            Constraint::Parenthesized(_) | Constraint::Comparison(_) | Constraint::Exists(_) => {
-                unreachable!()
-            }
+            Constraint::Parenthesized(_)
+            | Constraint::Comparison(_)
+            | Constraint::Exists(_)
+            | Constraint::Constructor(_) => unreachable!(),
         }
     }
 
@@ -32,9 +34,10 @@ impl Fix<Constraint> for Constraint {
             Constraint::And(inner) => inner.set_right(right),
             Constraint::Or(inner) => inner.set_right(right),
             Constraint::Semi(inner) => inner.set_right(right),
-            Constraint::Parenthesized(_) | Constraint::Comparison(_) | Constraint::Exists(_) => {
-                unreachable!()
-            }
+            Constraint::Parenthesized(_)
+            | Constraint::Comparison(_)
+            | Constraint::Exists(_)
+            | Constraint::Constructor(_) => unreachable!(),
         }
     }
 
@@ -44,7 +47,10 @@ impl Fix<Constraint> for Constraint {
             Constraint::And(inner) => inner.precedence(),
             Constraint::Or(inner) => inner.precedence(),
             Constraint::Semi(inner) => inner.precedence(),
-            Constraint::Parenthesized(_) | Constraint::Comparison(_) | Constraint::Exists(_) => 0,
+            Constraint::Parenthesized(_)
+            | Constraint::Comparison(_)
+            | Constraint::Exists(_)
+            | Constraint::Constructor(_) => 0,
         }
     }
 }

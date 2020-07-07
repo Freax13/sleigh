@@ -13,6 +13,7 @@ pub enum Constraint {
     Parenthesized(Box<Constraint>),
     Comparison(ConstraintComparison),
     Exists(ConstraintExists),
+    Constructor(ConstraintConstructor),
 }
 
 #[derive(Clone, PartialEq)]
@@ -48,6 +49,11 @@ pub struct ConstraintComparison {
 
 #[derive(Clone, PartialEq)]
 pub struct ConstraintExists {
+    pub name: String,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct ConstraintConstructor {
     pub name: String,
 }
 

@@ -267,7 +267,7 @@ impl SleighParser {
             table = Some(token.as_str());
             token = tokens.next().unwrap();
         }
-        let constraint = Self::parse_constraint(token);
+        let constraint = self.parse_constraint(token);
 
         if let Some(token) = tokens.next() {
             let rule = token.as_rule();
@@ -297,7 +297,7 @@ impl SleighParser {
 
     fn constructor(&mut self, mut tokens: Pairs<Rule>, with_context: Option<&WithBlockContext>) {
         let mut header = Self::parse_table_header(tokens.next().unwrap());
-        let mut constraint = Self::parse_constraint(tokens.next().unwrap());
+        let mut constraint = self.parse_constraint(tokens.next().unwrap());
 
         let mut token = tokens.next().unwrap();
         let mut calculations = with_context
@@ -365,20 +365,20 @@ impl SleighParser {
         TableHeader { table, mnemonic }
     }
 
-    fn parse_constraint(token: Pair<Rule>) -> Constraint {
-        let constraint = Self::parse_raw_constraint(token);
+    fn parse_constraint(&self, token: Pair<Rule>) -> Constraint {
+        let constraint = self.parse_raw_constraint(token);
         fix_precedence_constraint(constraint)
     }
 
-    fn parse_raw_constraint(token: Pair<Rule>) -> Constraint {
+    fn parse_raw_constraint(&self, token: Pair<Rule>) -> Constraint {
         let rule = token.as_rule();
         let mut tokens = token.into_inner();
 
         match rule {
-            Rule::constraint => Self::parse_constraint(tokens.next().unwrap()),
+            Rule::constraint => self.parse_constraint(tokens.next().unwrap()),
             Rule::constraint_and => {
-                let mut constraint = Self::parse_constraint(tokens.next().unwrap());
-                for rhs in tokens.map(Self::parse_constraint) {
+                let mut constraint = self.parse_constraint(tokens.next().unwrap());
+                for rhs in tokens.map(|t| self.parse_constraint(t)) {
                     constraint = Constraint::And(Box::new(ConstraintAnd {
                         lhs: constraint,
                         rhs,
@@ -387,8 +387,8 @@ impl SleighParser {
                 constraint
             }
             Rule::constraint_or => {
-                let mut constraint = Self::parse_constraint(tokens.next().unwrap());
-                for rhs in tokens.map(Self::parse_constraint) {
+                let mut constraint = self.parse_constraint(tokens.next().unwrap());
+                for rhs in tokens.map(|t| self.parse_constraint(t)) {
                     constraint = Constraint::Or(Box::new(ConstraintOr {
                         lhs: constraint,
                         rhs,
@@ -397,8 +397,8 @@ impl SleighParser {
                 constraint
             }
             Rule::constraint_semi => {
-                let mut constraint = Self::parse_constraint(tokens.next().unwrap());
-                for rhs in tokens.map(Self::parse_constraint) {
+                let mut constraint = self.parse_constraint(tokens.next().unwrap());
+                for rhs in tokens.map(|t| self.parse_constraint(t)) {
                     constraint = Constraint::Semi(Box::new(ConstraintSemi {
                         lhs: constraint,
                         rhs,
@@ -427,10 +427,19 @@ impl SleighParser {
             }
             Rule::basic_constraint_exists => {
                 let name = tokens.next().unwrap().as_str().to_string();
-                Constraint::Exists(ConstraintExists { name })
+                if self
+                    .tokens
+                    .iter()
+                    .flat_map(|t| t.fields.iter())
+                    .any(|f| f.name == name)
+                {
+                    Constraint::Exists(ConstraintExists { name })
+                } else {
+                    Constraint::Constructor(ConstraintConstructor { name })
+                }
             }
             Rule::basic_constraint_parenthesized => {
-                let constraint = Self::parse_constraint(tokens.next().unwrap());
+                let constraint = self.parse_constraint(tokens.next().unwrap());
                 Constraint::Parenthesized(Box::new(constraint))
             }
             r => unreachable!("{:?}", r),
